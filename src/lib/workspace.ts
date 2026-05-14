@@ -43,6 +43,7 @@ export interface Project {
   description: string;
   created: string;
   notes: string;
+  taskIds: string[];
 }
 
 export interface CronJob {
@@ -124,17 +125,33 @@ export function readProjects(): Project[] {
     return files.map((filename) => {
       const content = readFile(path.join(projectsDir, filename));
       const fm: Record<string, string> = {};
+      const fmLists: Record<string, string[]> = {};
+      let currentListKey: string | null = null;
+
       const match = content.match(/^---\n([\s\S]*?)\n---/);
       if (match) {
         match[1].split("\n").forEach((line) => {
+          // YAML list item under the current key
+          if (currentListKey && /^\s+-\s+/.test(line)) {
+            fmLists[currentListKey].push(line.replace(/^\s+-\s+/, "").trim());
+            return;
+          }
+          currentListKey = null;
           const colonIdx = line.indexOf(":");
           if (colonIdx > -1) {
             const key = line.slice(0, colonIdx).trim();
             const val = line.slice(colonIdx + 1).trim();
-            fm[key] = val;
+            if (val === "") {
+              // Empty value — list follows on subsequent lines
+              fmLists[key] = [];
+              currentListKey = key;
+            } else {
+              fm[key] = val;
+            }
           }
         });
       }
+
       const notes = content.replace(/^---[\s\S]*?---\n?/, "").trim();
       return {
         id: filename.replace(".md", ""),
@@ -144,6 +161,7 @@ export function readProjects(): Project[] {
         description: fm.description || "",
         created: fm.created || "",
         notes,
+        taskIds: fmLists.tasks || [],
       };
     });
   } catch {

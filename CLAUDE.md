@@ -121,7 +121,7 @@ The 7-agent crew is hardcoded here. Status values: `"online"` (always-on, Telegr
 
 Current crew status:
 - **The Nexus** — `online` (deployed as Maduso, workspace: `~/.openclaw/workspace`)
-- **Architect** — `active` (workspace: `~/.openclaw/workspace-architect`, handles content creation)
+- **Writer** — `active` (workspace: `~/.openclaw/workspace-writer`, handles content creation)
 - **Chronos** — `active` (workspace: `~/.openclaw/workspace-chronos`, handles scheduling/calendar)
 - Sentinel, Prioritizer, Wayfinder, Researcher — `planned`
 

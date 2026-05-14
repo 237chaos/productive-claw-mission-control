@@ -75,15 +75,15 @@ export const AGENTS: Agent[] = [
     status: "planned",
   },
   {
-    id: "architect",
-    name: "Architect",
+    id: "writer",
+    name: "Writer",
     role: "Content Creation",
     description:
       "Takes researched data and transforms it into structured drafts or final content pieces.",
-    avatar: "🏗",
+    avatar: "✍️",
     accentColor: "#e91e8c",
     status: "active",
-    workspaceName: "Architect",
+    workspaceName: "Writer",
   },
 ];
 

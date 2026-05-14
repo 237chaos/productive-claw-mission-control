@@ -35,6 +35,21 @@ export interface ActivityEntry {
   timestamp: string;
 }
 
+export interface AgentStatusEntry {
+  status: "online" | "idle" | "inactive";
+  lastSeen: string;
+  note?: string;
+}
+
+export type AgentStatusMap = Record<string, AgentStatusEntry>;
+
+export interface AgentLastActivity {
+  agentId: string;
+  action: string;
+  taskTitle: string;
+  timestamp: string;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -259,4 +274,33 @@ export function readCronJobs(): CronJob[] {
   } catch {
     return [];
   }
+}
+
+export function readAgentStatus(): AgentStatusMap {
+  const statusPath = workspacePath("agent-status.json");
+  try {
+    const raw = readFile(statusPath);
+    if (!raw.trim()) return {};
+    return JSON.parse(raw) as AgentStatusMap;
+  } catch {
+    return {};
+  }
+}
+
+export function readLastActivityPerAgent(): Record<string, AgentLastActivity> {
+  const activities = readActivity();
+  const result: Record<string, AgentLastActivity> = {};
+  // activity is sorted newest-first; first hit per agentId wins
+  for (const entry of activities) {
+    const key = entry.agentId === "nexus" ? "main" : entry.agentId;
+    if (!result[key]) {
+      result[key] = {
+        agentId: key,
+        action: entry.action,
+        taskTitle: entry.taskTitle,
+        timestamp: entry.timestamp,
+      };
+    }
+  }
+  return result;
 }

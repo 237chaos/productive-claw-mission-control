@@ -47,12 +47,15 @@ export interface Project {
 
 export interface CronJob {
   id: string;
+  name: string;
+  description: string;
+  agentId: string;
   schedule: string;
+  tz?: string;
   prompt: string;
-  channel?: string;
   enabled: boolean;
   type: "daily" | "recurring" | "one-shot";
-  nextDescription?: string;
+  createdAtMs?: number;
 }
 
 function readFile(filePath: string): string {
@@ -192,31 +195,50 @@ export function appendActivity(entry: Omit<ActivityEntry, "id">): void {
 }
 
 export function readCronJobs(): CronJob[] {
-  const config = readOpenclawConfig();
-  const crons = (config.crons as Record<string, unknown>) || {};
+  const cronPath = path.join(OPENCLAW_DIR, "cron", "jobs.json");
+  try {
+    const raw = readFile(cronPath);
+    if (!raw.trim()) return [];
+    const parsed = JSON.parse(raw);
+    const jobs: Record<string, unknown>[] = Array.isArray(parsed.jobs)
+      ? parsed.jobs
+      : [];
 
-  return Object.entries(crons).map(([id, entry]) => {
-    const cron = entry as Record<string, unknown>;
-    const schedule = (cron.schedule as string) || "";
+    return jobs.map((job) => {
+      const scheduleObj = job.schedule as Record<string, unknown> | undefined;
+      const expr = (scheduleObj?.expr as string) || "";
+      const tz = (scheduleObj?.tz as string) || undefined;
 
-    let type: CronJob["type"] = "recurring";
-    if (schedule.includes("@daily") || schedule === "0 0 * * *") {
-      type = "daily";
-    } else if (
-      schedule === "@once" ||
-      /^\d{4}-\d{2}-\d{2}/.test(schedule)
-    ) {
-      type = "one-shot";
-    }
+      let type: CronJob["type"] = "recurring";
+      if (!expr || expr === "@once") {
+        type = "one-shot";
+      } else if (expr === "@daily" || expr === "@hourly") {
+        type = "daily";
+      } else {
+        const parts = expr.split(" ");
+        if (parts.length === 5) {
+          const [, , dom, month, dow] = parts;
+          if (dom === "*" && month === "*" && dow === "*") type = "daily";
+        }
+      }
 
-    const promptStr = (cron.prompt as string) || "";
-    return {
-      id,
-      schedule,
-      prompt: promptStr,
-      channel: cron.channel as string | undefined,
-      enabled: cron.enabled !== false,
-      type,
-    };
-  });
+      const payload = job.payload as Record<string, unknown> | undefined;
+      const prompt = (payload?.text as string) || "";
+
+      return {
+        id: job.id as string,
+        name: (job.name as string) || "",
+        description: (job.description as string) || "",
+        agentId: (job.agentId as string) || "",
+        schedule: expr,
+        tz,
+        prompt,
+        enabled: job.enabled !== false,
+        type,
+        createdAtMs: job.createdAtMs as number | undefined,
+      };
+    });
+  } catch {
+    return [];
+  }
 }

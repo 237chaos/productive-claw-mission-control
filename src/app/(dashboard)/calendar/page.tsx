@@ -26,23 +26,37 @@ const TYPE_STYLES: Record<
   },
 };
 
-function parseCronHuman(schedule: string): string {
-  if (!schedule) return "Unknown schedule";
-  if (schedule === "@daily" || schedule === "0 0 * * *") return "Daily at midnight";
+function parseCronHuman(schedule: string, tz?: string): string {
+  if (!schedule) return "One-time";
+  if (schedule === "@daily") return "Daily at midnight";
   if (schedule === "@hourly") return "Every hour";
   if (schedule === "@weekly") return "Weekly";
   if (schedule === "@once") return "One-time";
 
+  const tzLabel = tz
+    ? " " + (tz.split("/")[1] || tz).replace("_", " ")
+    : "";
+
   const parts = schedule.split(" ");
   if (parts.length === 5) {
     const [min, hour, dom, month, dow] = parts;
+    const timeStr = `${hour.padStart(2, "0")}:${min.padStart(2, "0")}${tzLabel}`;
     if (dow !== "*") {
       const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const dowParts = dow.split("-");
+      if (dowParts.length === 2) {
+        const from = days[parseInt(dowParts[0])] || dowParts[0];
+        const to = days[parseInt(dowParts[1])] || dowParts[1];
+        return `${from}–${to} at ${timeStr}`;
+      }
       const dayName = days[parseInt(dow)] || dow;
-      return `Every ${dayName} at ${hour.padStart(2, "0")}:${min.padStart(2, "0")}`;
+      return `Every ${dayName} at ${timeStr}`;
     }
     if (dom === "*" && month === "*") {
-      return `Daily at ${hour.padStart(2, "0")}:${min.padStart(2, "0")}`;
+      return `Daily at ${timeStr}`;
+    }
+    if (dom !== "*" && month !== "*") {
+      return `${month}/${dom} at ${timeStr}`;
     }
     return schedule;
   }
@@ -51,9 +65,9 @@ function parseCronHuman(schedule: string): string {
 
 function CronCard({ cron }: { cron: CronJob }) {
   const style = TYPE_STYLES[cron.type];
-  const humanSchedule = parseCronHuman(cron.schedule);
+  const humanSchedule = parseCronHuman(cron.schedule, cron.tz);
   const shortPrompt =
-    cron.prompt.length > 160 ? cron.prompt.slice(0, 160) + "…" : cron.prompt;
+    cron.prompt.length > 200 ? cron.prompt.slice(0, 200) + "…" : cron.prompt;
 
   return (
     <div
@@ -62,42 +76,59 @@ function CronCard({ cron }: { cron: CronJob }) {
       }`}
       style={{ borderColor: cron.enabled ? style.border : "#1a1a35" }}
     >
-      <div className="flex items-start gap-3 mb-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span
-              className="font-mono text-[10px] font-semibold px-2 py-0.5 rounded border tracking-wider"
-              style={{
-                color: style.color,
-                borderColor: style.border,
-                backgroundColor: style.bg,
-              }}
-            >
-              {style.label}
-            </span>
-            {!cron.enabled && (
-              <span className="font-mono text-[10px] text-mc-muted border border-mc-border px-2 py-0.5 rounded">
-                DISABLED
-              </span>
-            )}
-            <span className="font-mono text-xs text-mc-muted ml-auto flex items-center gap-1.5">
-              <Clock size={11} />
-              {humanSchedule}
-            </span>
-          </div>
-          <code className="font-mono text-[10px] text-mc-subtle block mb-2">
-            {cron.schedule}
-          </code>
-          {cron.channel && (
-            <div className="font-mono text-[10px] text-mc-muted mb-2">
-              → {cron.channel}
-            </div>
-          )}
-        </div>
+      {/* Header row */}
+      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+        <span
+          className="font-mono text-[10px] font-semibold px-2 py-0.5 rounded border tracking-wider"
+          style={{
+            color: style.color,
+            borderColor: style.border,
+            backgroundColor: style.bg,
+          }}
+        >
+          {style.label}
+        </span>
+        {!cron.enabled && (
+          <span className="font-mono text-[10px] text-mc-muted border border-mc-border px-2 py-0.5 rounded">
+            DISABLED
+          </span>
+        )}
+        <span className="font-mono text-xs text-mc-muted ml-auto flex items-center gap-1.5">
+          <Clock size={11} />
+          {humanSchedule}
+        </span>
       </div>
-      <p className="text-xs text-mc-muted leading-relaxed font-mono break-words">
-        {shortPrompt}
-      </p>
+
+      {/* Name */}
+      {cron.name && (
+        <div className="text-white text-sm font-semibold mb-0.5">{cron.name}</div>
+      )}
+
+      {/* Description */}
+      {cron.description && (
+        <p className="text-mc-muted text-xs leading-relaxed mb-2">
+          {cron.description}
+        </p>
+      )}
+
+      {/* Meta row */}
+      <div className="flex items-center gap-2 mb-3">
+        <code className="font-mono text-[10px] text-mc-subtle">
+          {cron.schedule}
+        </code>
+        {cron.agentId && (
+          <span className="font-mono text-[10px] text-mc-muted border border-mc-border px-1.5 py-0.5 rounded ml-auto">
+            agent: {cron.agentId}
+          </span>
+        )}
+      </div>
+
+      {/* Prompt preview */}
+      {shortPrompt && (
+        <p className="text-[11px] text-mc-muted/70 leading-relaxed font-mono break-words border-t border-mc-border pt-3">
+          {shortPrompt}
+        </p>
+      )}
     </div>
   );
 }
@@ -156,11 +187,13 @@ export default function CalendarPage() {
           <Calendar size={28} className="text-mc-muted mx-auto mb-3" />
           <p className="text-white font-medium mb-1">No scheduled tasks</p>
           <p className="text-mc-muted text-sm mb-4">
-            Cron jobs set up in openclaw.json will appear here.
+            Scheduled agent tasks will appear here.
           </p>
           <p className="font-mono text-[11px] text-mc-subtle">
-            Ask Maduso to schedule a recurring task, or add a cron entry to{" "}
-            <code className="text-mc-blue">~/.openclaw/openclaw.json</code>
+            Ask Maduso on Telegram to schedule something, or use{" "}
+            <code className="text-mc-blue">openclaw cron add</code> in the
+            terminal. Jobs are stored in{" "}
+            <code className="text-mc-blue">~/.openclaw/cron/jobs.json</code>
           </p>
         </div>
       ) : (

@@ -90,44 +90,93 @@ export default function TeamPage() {
           Specialist Crew
         </div>
         <div className="grid grid-cols-3 gap-3">
-          {crew.map((agent) => (
-            <div
-              key={agent.id}
-              className="rounded border border-mc-border bg-mc-card p-4 relative opacity-60 hover:opacity-80 transition-opacity"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div
-                  className="w-10 h-10 rounded border border-mc-border flex items-center justify-center text-lg flex-shrink-0"
-                  style={{
-                    backgroundColor: agent.accentColor + "15",
-                    borderColor: agent.accentColor + "30",
-                  }}
-                >
-                  {agent.avatar}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-white text-sm font-semibold truncate">
-                    {agent.name}
-                  </div>
+          {crew.map((agent) => {
+            const isActive = agent.status === "active";
+            return (
+              <div
+                key={agent.id}
+                className={`rounded border bg-mc-card p-4 relative transition-opacity ${
+                  isActive
+                    ? "opacity-100 hover:opacity-90"
+                    : "opacity-50 hover:opacity-70"
+                }`}
+                style={{
+                  borderColor: isActive
+                    ? agent.accentColor + "40"
+                    : undefined,
+                }}
+              >
+                {isActive && (
                   <div
-                    className="font-mono text-[10px] truncate"
-                    style={{ color: agent.accentColor }}
+                    className="absolute inset-0 rounded pointer-events-none"
+                    style={{ backgroundColor: agent.accentColor + "05" }}
+                  />
+                )}
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className="w-10 h-10 rounded border flex items-center justify-center text-lg flex-shrink-0"
+                    style={{
+                      backgroundColor: agent.accentColor + "15",
+                      borderColor: agent.accentColor + "30",
+                    }}
                   >
-                    {agent.role}
+                    {agent.avatar}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-white text-sm font-semibold truncate">
+                      {agent.name}
+                    </div>
+                    <div
+                      className="font-mono text-[10px] truncate"
+                      style={{ color: agent.accentColor }}
+                    >
+                      {agent.role}
+                    </div>
                   </div>
                 </div>
+                <p className="text-xs text-mc-muted leading-relaxed mb-3">
+                  {agent.description}
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {isActive ? (
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="w-1.5 h-1.5 rounded-full inline-block"
+                          style={{ backgroundColor: agent.accentColor }}
+                        />
+                        <span
+                          className="font-mono text-[10px] tracking-wider"
+                          style={{ color: agent.accentColor }}
+                        >
+                          ACTIVE
+                        </span>
+                      </div>
+                      {agent.workspaceName && (
+                        <span
+                          className="font-mono text-[9px] px-1.5 py-0.5 rounded border"
+                          style={{
+                            color: agent.accentColor,
+                            borderColor: agent.accentColor + "30",
+                            backgroundColor: agent.accentColor + "10",
+                          }}
+                        >
+                          ws: {agent.workspaceName}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-mc-muted inline-block" />
+                      <span className="font-mono text-[10px] text-mc-muted tracking-wider">
+                        PLANNED
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-mc-muted leading-relaxed mb-3">
-                {agent.description}
-              </p>
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-mc-muted inline-block" />
-                <span className="font-mono text-[10px] text-mc-muted tracking-wider">
-                  PLANNED
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

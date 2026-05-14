@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Brain, Search } from "lucide-react";
 import type { DailyMemory } from "@/lib/workspace";
 
@@ -14,11 +15,17 @@ interface Props {
 }
 
 export default function MemoryViewer({ dailyMemories, longTermHtml }: Props) {
+  const router = useRouter();
   const [tab, setTab] = useState<"daily" | "longterm">("daily");
   const [selected, setSelected] = useState<string>(
     dailyMemories[0]?.date || ""
   );
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const interval = setInterval(() => router.refresh(), 30000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   const filteredMemories = dailyMemories.filter(
     (m) =>

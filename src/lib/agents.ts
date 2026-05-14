@@ -1,4 +1,4 @@
-export type AgentStatus = "online" | "offline" | "planned";
+export type AgentStatus = "online" | "active" | "offline" | "planned";
 
 export interface Agent {
   id: string;
@@ -41,7 +41,8 @@ export const AGENTS: Agent[] = [
       "Manages daily agendas and proactively notifies of upcoming commitments and time-blocks.",
     avatar: "⏱",
     accentColor: "#00ffaa",
-    status: "planned",
+    status: "active",
+    workspaceName: "Chronos",
   },
   {
     id: "prioritizer",
@@ -81,7 +82,8 @@ export const AGENTS: Agent[] = [
       "Takes researched data and transforms it into structured drafts or final content pieces.",
     avatar: "🏗",
     accentColor: "#e91e8c",
-    status: "planned",
+    status: "active",
+    workspaceName: "Architect",
   },
 ];
 

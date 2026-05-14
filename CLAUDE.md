@@ -117,11 +117,13 @@ Optional freeform notes here.
 
 ## Agent Definitions (`src/lib/agents.ts`)
 
-The 7-agent crew is hardcoded here. To activate a planned agent: change `status: "planned"` → `status: "online"` and set `workspaceName` to their workspace identity. Never remove agents — set them to `"offline"` if decommissioned.
+The 7-agent crew is hardcoded here. Status values: `"online"` (always-on, Telegram-facing), `"active"` (named agent in openclaw.json, spawnable), `"planned"` (not yet built), `"offline"` (decommissioned). Set `workspaceName` for any active/online agent. Never remove agents — set to `"offline"` if decommissioned.
 
 Current crew status:
-- **The Nexus** — `online` (deployed as Maduso)
-- Sentinel, Chronos, Prioritizer, Wayfinder, Researcher, Architect — `planned`
+- **The Nexus** — `online` (deployed as Maduso, workspace: `~/.openclaw/workspace`)
+- **Architect** — `active` (workspace: `~/.openclaw/workspace-architect`, handles content creation)
+- **Chronos** — `active` (workspace: `~/.openclaw/workspace-chronos`, handles scheduling/calendar)
+- Sentinel, Prioritizer, Wayfinder, Researcher — `planned`
 
 ## Notifications
 
